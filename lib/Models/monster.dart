@@ -1,3 +1,5 @@
+import 'package:dnd_helper/Tools/Extensions.dart';
+
 class Response {
   int? count;
   String? next;
@@ -155,8 +157,8 @@ class Monster {
     languages = json['languages'];
     challengeRating = json['challenge_rating'];
 
-    if (json['actions'] != null) {
-      actions = <Action>[];
+    actions = <Action>[];
+    if (json['actions'] != "") {
       json['actions'].forEach((v) {
         actions!.add(Action.fromJson(v));
       });
@@ -170,16 +172,15 @@ class Monster {
     }
 
     legendaryDesc = json['legendary_desc'];
-    if (json['legendary_actions'] != null) {
-      legendaryActions = <DescribableAction>[];
-      if (json['legendary_actions'] != ""){
-        json['legendary_actions'].forEach((v) {
-          legendaryActions!.add(DescribableAction.fromJson(v));
-        });
-      }
+    legendaryActions = <DescribableAction>[];
+    if (json['legendary_actions'] != "") {
+      json['legendary_actions'].forEach((v) {
+        legendaryActions!.add(DescribableAction.fromJson(v));
+      });
     }
-    if (json['special_abilities'] != null) {
-      specialAbilities = <DescribableAction>[];
+
+    specialAbilities = <DescribableAction>[];
+    if (json['special_abilities'] != "") {
       json['special_abilities'].forEach((v) {
         specialAbilities!.add(DescribableAction.fromJson(v));
       });
@@ -330,35 +331,83 @@ class DescribableAction {
   }
 }
 
-class DiceRoll
-{
-  int? amount;
-  int? diceFaces;
-  String? plus;
+class Value {
+  static RegExp fullRegExp = RegExp(r'(\d+)d(\d+)(([+--](((\d+)d(\d+))|(\d+)))+)?');
+  static RegExp numericRegExp = RegExp(r'\d+');
+  static RegExp diceRegExp = RegExp(r'(\d+)d(\d+)');
+  static RegExp operatorRegExp = RegExp(r'[+\-]');
 
-  DiceRoll(this.amount, this.diceFaces, this.plus);
+  static Value? fromString(String string) {
+    if (diceRegExp.hasMatch(string)) {
+      return DiceValue.fromString(string);
+    } else if (numericRegExp.hasMatch(string)) {
+      return RawValue(int.parse(string));
+    } else if (operatorRegExp.hasMatch(string)) {
+      return Operator(string);
+    } else {
+      return null;
+    }
+  }
+}
+
+class Operator extends Value {
+  String? operator;
+  Operator(this.operator);
+
+  @override
+  String toString() {
+    return operator!;
+  }
+}
+
+class RawValue extends Value {
+  int? value;
+  RawValue(this.value);
+
+  @override
+  String toString() {
+    return value!.toString();
+  }
+}
+
+class DiceValue extends Value {
+  int? amount;
+  int? die;
+  DiceValue(this.amount, this.die);
+
+  DiceValue.fromString(String string) {
+    var split = string.split('d');
+    amount = int.parse(split.first);
+    die = int.parse(split.last);
+  }
+
+  @override
+  String toString() {
+    return "${amount}d$die";
+  }
+}
+
+class DiceRoll {
+  List<Value>? values;
+  DiceRoll(this.values);
 
   DiceRoll.fromJson(String json) {
-    if (json == null) return;
-    List<String> split  ;
-
-    if (json.contains('+')){
-      split = json.split('+');
-      plus = split.last;
-    } else {
-      split = [json];
-    }
-
-    if (json.contains('d')) {
-      var dices = split.first.split('d');
-      amount = int.parse(dices.first);
-      diceFaces = int.parse(dices.last);
+    var uncomputedValues = json.splitWithDelim(RegExp(r'[+--]'));
+    values = <Value>[];
+    for (var element in uncomputedValues) {
+      var value = Value.fromString(element);
+      if (value != null) {
+        values?.add(value);
+      }
     }
   }
 
   @override
-  String toString(){
-    return '$amount}d$diceFaces+$plus';
+  String toString() {
+    var buffer = StringBuffer();
+    values?.forEach((element) {
+      buffer.write(element.toString());
+    });
+    return buffer.toString();
   }
-
 }
