@@ -1,4 +1,4 @@
-import 'package:dnd_helper/Tools/Extensions.dart';
+import 'package:dnd_helper/Tools/extensions.dart';
 
 class Response {
   int? count;
