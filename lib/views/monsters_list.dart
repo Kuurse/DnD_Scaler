@@ -1,7 +1,8 @@
+import 'package:dnd_helper/views/monster_detail.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../Models/monster.dart';
+import '../models/monster.dart';
 
 class MonsterList extends StatefulWidget {
   const MonsterList({Key? key}) : super(key: key);
@@ -24,7 +25,6 @@ class _MonsterListState extends State<MonsterList> {
 
   Future<void> fetchMonsters() async {
     var json = await http.get(Uri.parse('https://raw.githubusercontent.com/Kuurse/DnD_Scaler/main/assets/monsters.json'));
-    monsters = Response.fromJson(jsonDecode(json.body)).results;
     setState(() {
       monsters = Response.fromJson(jsonDecode(json.body)).results;
       filteredMonsters = List.from(monsters!);
@@ -34,57 +34,67 @@ class _MonsterListState extends State<MonsterList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-            backgroundColor: Colors.black,
-            title: !_searchBoolean ? const Text("Monstrueux") : _searchTextField(),
-            actions: !_searchBoolean ? [
-              IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {
-                    setState(() {
-                      _searchBoolean = true;
-                    });
-                  })
-            ] : [
-              IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    setState(() {
-                      _searchBoolean = false;
-                    });
-                  }
-              )
-            ]
-        ),
-        drawer: const Drawer(),
-        body: !_searchBoolean ? _defaultListView() : _searchListView()
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: !_searchBoolean ? const Text("Monstrueux") : _searchTextField(),
+        actions: !_searchBoolean ? [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              setState(() {
+                _searchBoolean = true;
+              });
+            })
+        ] : [
+          IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () {
+              setState(() {
+                _searchBoolean = false;
+              });
+            }
+          )
+        ]
+      ),
+      drawer: const Drawer(),
+      body: !_searchBoolean ? _defaultListView() : _searchListView()
     );
   }
 
 
   Widget _defaultListView() {
     return ListView.builder(
-        itemCount: monsters!.length,
-        itemBuilder: (BuildContext context, int index) {
-          return Card(
-              child: ListTile(
-                  title: Text(monsters![index].name ?? "")
-              )
-          );
-        }
+      itemCount: monsters!.length,
+      itemBuilder: (BuildContext context, int index) {
+        return Card(
+            child: ListTile(
+              onTap: () => onTap(context, index),
+                title: Text(monsters![index].name ?? "")
+            )
+        );
+      },
+
+    );
+  }
+
+  void onTap(BuildContext context, int index) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context)=>
+        MonsterDetailPage(monster: monsters?[index])
+      )
     );
   }
 
   Widget _searchListView() { //add
     return ListView.builder(
-        itemCount: filteredMonsters!.length,
-        itemBuilder: (context, index) {
-          return Card(
-              child: ListTile(
-                  title: Text(filteredMonsters![index].name ?? "")
-              )
-          );
-        }
+      itemCount: filteredMonsters!.length,
+      itemBuilder: (context, index) {
+        return Card(
+          child: ListTile(
+            title: Text(filteredMonsters![index].name ?? "")
+          )
+        );
+      }
     );
   }
 
@@ -115,14 +125,12 @@ class _MonsterListState extends State<MonsterList> {
   }
 
   void onChanged(String string){
-    // filteredMonsters = List.from(monsters!);
-    setState(() {
-      filteredMonsters = List.from(monsters!);
-      monsters?.forEach((monster) {
-        if (!monster.name!.toLowerCase().contains(string.toLowerCase())){
-          filteredMonsters?.remove(monster);
-        }
-      });
+    filteredMonsters = List.from(monsters!);
+    monsters?.forEach((monster) {
+      if (!monster.name!.toLowerCase().contains(string.toLowerCase())){
+        filteredMonsters?.remove(monster);
+      }
     });
+    setState((){});
   }
 }
