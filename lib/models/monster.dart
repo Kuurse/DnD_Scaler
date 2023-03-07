@@ -1,4 +1,4 @@
-import 'package:dnd_helper/Tools/extensions.dart';
+import 'package:dnd_helper/tools/extensions.dart';
 
 class Response {
   int? count;
@@ -76,6 +76,8 @@ class Monster {
   String? documentSlug;
   String? documentTitle;
   String? documentLicenseUrl;
+  int? multiattack;
+  int xp = 0;
 
   Monster(
       {this.slug,
@@ -191,6 +193,21 @@ class Monster {
     documentSlug = json['document__slug'];
     documentTitle = json['document__title'];
     documentLicenseUrl = json['document__license_url'];
+  }
+
+  int getAttackPerTurnCount() {
+    String? multiatt = actions?.where((action) => action.name!.contains("Multiattack")).first.name?.toLowerCase();
+    int multi = 1;
+
+    if (multiatt != null){
+      int att = 1;
+      var x = multiatt.split("makes ").last;
+      var textNum = x.split(" attacks").first;
+      multi = IntExtension.fromPlainEnglish(textNum);
+    }
+
+    multiattack = multi;
+    return multi;
   }
 
   Map<String, dynamic> toJson() {

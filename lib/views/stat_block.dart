@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/monster.dart';
 
+const double height = 85;
 
 class StatBlock extends StatelessWidget {
   Monster? monster;
@@ -9,7 +10,6 @@ class StatBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
-    const int itemHeight = 85;
     final double itemWidth = size.width / 3;
 
     return GridView.count(
@@ -20,7 +20,7 @@ class StatBlock extends StatelessWidget {
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
       crossAxisCount: 3,
-      childAspectRatio: (itemWidth / itemHeight),
+      childAspectRatio: (itemWidth / height),
       children: <Widget>[
         StatDetail(
           name: "STR",
@@ -60,28 +60,35 @@ class StatDetail extends StatelessWidget {
   Widget build(BuildContext context) {
 
     return Container(
+      height: height,
       padding: const EdgeInsets.only(top:15, bottom: 15),
-      decoration: BoxDecoration(
-        // border: Border.all(
-        //   color: Colors.red,
-        // ),
+      decoration: const BoxDecoration(
         color: Colors.black,
-        borderRadius: const BorderRadius.all(Radius.circular(20))
+        borderRadius: BorderRadius.all(Radius.circular(20))
       ),
-      child: Column(
-        children: [
-          Text(
-            name ?? "?",
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              decoration: TextDecoration.underline,
-            )
-          ),
-          Text("$value"),
-        ],
+      child: Center(
+        child: Column(
+          children: [
+            Text(
+              name ?? "?",
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.underline,
+              )
+            ),
+            Text("$value (${getValueBonus(value)})"),
+          ],
+        ),
       ),
     );
+  }
+
+  String getValueBonus(int? value){
+    if (value == null) return "+0";
+    int bonus = (value-10) ~/ 2;
+    String plusMinus = bonus > 0 ? "+" : "";
+    return "$plusMinus$bonus";
   }
 }
 
