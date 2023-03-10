@@ -101,11 +101,6 @@ extension MonsterScaler on Monster {
         dr = lastMore;
         dr.modifier = (lastMore.modifier ?? 0) + more;
       }
-
-      print(targetDmg);
-      print(dr.getAverageRoll());
-      print("${dr.toString()}\n");
-
       return dr;
 
     }
@@ -121,7 +116,7 @@ extension MonsterScaler on Monster {
     for (var action in act){
       if (action.damageBonus == null && action.damageDice == null) continue;
       var newAction = Action(name: action.name);
-      newAction.attackBonus = action.attackBonus! + (diff ~/ 4);
+      newAction.attackBonus = action.attackBonus! + (diff/4).round();
 
       var dmgDice = calculateDamageDice(action, diff);
       newAction.damageDice = dmgDice;

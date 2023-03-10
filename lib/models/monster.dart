@@ -10,6 +10,43 @@ RegExp diceRegExp = RegExp(r'(\d+)d(\d+)');
 RegExp operatorRegExp = RegExp(r'[+\-]');
  */
 
+final Map<String, int> pb = <String, int>{
+  "0": 2,
+  "1/8": 2,
+  "1/4": 2,
+  "1/2": 2,
+  "1": 2,
+  "2": 2,
+  "3": 2,
+  "4": 2,
+  "5": 3,
+  "6": 3,
+  "7": 3,
+  "8": 3,
+  "9": 4,
+  "10": 4,
+  "11":	4,
+  "12":	4,
+  "13":	5,
+  "14":	5,
+  "15":	5,
+  "16":	5,
+  "17":	6,
+  "18":	6,
+  "19":	6,
+  "20":	6,
+  "21":	7,
+  "22":	7,
+  "23":	7,
+  "24":	7,
+  "25":	8,
+  "26":	8,
+  "27":	8,
+  "28":	8,
+  "29":	9,
+  "30":	9,
+};
+
 class Response {
   int? count;
   String? next;
@@ -54,7 +91,7 @@ class Monster {
   String? armorDesc;
   int? hitPoints;
   DiceRoll? hitDice;
-  Speed? speed;
+  List<Stat>? speed;
   int? strength;
   int? dexterity;
   int? constitution;
@@ -68,7 +105,7 @@ class Monster {
   int? wisdomSave;
   int? charismaSave;
   int? perception;
-  Map<String, dynamic>? skills;
+  List<Stat>? skills;
   String? damageVulnerabilities;
   String? damageResistances;
   String? damageImmunities;
@@ -88,6 +125,7 @@ class Monster {
   String? documentLicenseUrl;
   num? multiattack;
   int xp = 0;
+  int? proficiencyBonus;
 
   Monster(
       {this.slug,
@@ -146,7 +184,6 @@ class Monster {
     armorDesc = json['armor_desc'];
     hitPoints = json['hit_points'];
     hitDice = DiceRoll.fromJson(json['hit_dice']);
-    speed = json['speed'] != null ? Speed.fromJson(json['speed']) : null;
     strength = json['strength'] ?? 0;
     dexterity = json['dexterity'] ?? 0;
     constitution = json['constitution'] ?? 0;
@@ -160,7 +197,6 @@ class Monster {
     wisdomSave = json['wisdom_save'] ?? 0;
     charismaSave = json['charisma_save'] ?? 0;
     perception = json['perception'] ?? 0;
-    skills = json['skills'];
     damageVulnerabilities = json['damage_vulnerabilities'];
     damageResistances = json['damage_resistances'];
     damageImmunities = json['damage_immunities'];
@@ -168,6 +204,23 @@ class Monster {
     senses = json['senses'];
     languages = json['languages'];
     challengeRating = json['challenge_rating'];
+    proficiencyBonus = pb[challengeRating];
+
+    skills = <Stat>[];
+    json['skills'].forEach((key, value) {
+      skills!.add(Stat(
+          name: key,
+          value: value as int
+      ));
+    });
+
+    speed = <Stat>[];
+    json['skills'].forEach((key, value) {
+      speed!.add(Stat(
+          name: key,
+          value: value as int
+      ));
+    });
 
     actions = <Action>[];
     if (json['actions'] != "") {
@@ -231,9 +284,6 @@ class Monster {
     data['armor_desc'] = armorDesc;
     data['hit_points'] = hitPoints;
     data['hit_dice'] = hitDice.toString();
-    if (speed != null) {
-      data['speed'] = speed!.toJson();
-    }
     data['strength'] = strength;
     data['dexterity'] = dexterity;
     data['constitution'] = constitution;
@@ -247,7 +297,6 @@ class Monster {
     data['wisdom_save'] = wisdomSave;
     data['charisma_save'] = charismaSave;
     data['perception'] = perception;
-    data['skills'] = skills;
     data['damage_vulnerabilities'] = damageVulnerabilities;
     data['damage_resistances'] = damageResistances;
     data['damage_immunities'] = damageImmunities;
@@ -268,6 +317,15 @@ class Monster {
       data['special_abilities'] =
           specialAbilities!.map((v) => v.toJson()).toList();
     }
+
+    Map<String, int> sk = <String, int>{};
+    skills!.forEach((skill) => sk[skill.name!] = skill.value!);
+    data['skills'] = sk;
+
+    Map<String, int> sp = <String, int>{};
+    speed!.forEach((speed) => sp[speed.name!] = speed.value!);
+    data['speed'] = sp;
+
     data['spell_list'] = spellList;
     data['img_main'] = imgMain;
     data['document__slug'] = documentSlug;
@@ -286,32 +344,11 @@ class Monster {
   }
 }
 
-class Speed {
-  int? walk;
-  int? fly;
-  int? swim;
-  int? burrow;
-  int? climb;
+class Stat {
+  String? name;
+  int? value;
 
-  Speed({this.walk, this.fly, this.swim, this.burrow});
-
-  Speed.fromJson(Map<String, dynamic> json) {
-    walk = json['walk'];
-    fly = json['fly'];
-    swim = json['swim'];
-    burrow = json['burrow'];
-    climb = json['climb'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['walk'] = walk;
-    data['fly'] = fly;
-    data['swim'] = swim;
-    data['burrow'] = burrow;
-    data['climb'] = climb;
-    return data;
-  }
+  Stat({this.name, this.value});
 }
 
 class Action {
@@ -326,11 +363,7 @@ class Action {
       { this.name,
         this.desc,
         this.attackBonus,
-        this.damageDice}){
-    // int? read = readAverageDamage();
-    // int? compute = computeAverageDamage();
-    // print("$read $compute");
-  }
+        this.damageDice});
 
   int? readAverageDamage() {
     var regex = RegExp(r'Hit: \d+');

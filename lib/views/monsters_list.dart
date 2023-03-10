@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/monster.dart';
+import 'drawer.dart';
 
 class MonsterList extends StatefulWidget {
   const MonsterList({Key? key}) : super(key: key);
@@ -57,7 +58,7 @@ class _MonsterListState extends State<MonsterList> {
           )
         ]
       ),
-      drawer: const Drawer(),
+      drawer: const MyDrawer(),
       body: !_searchBoolean ? _defaultListView() : _searchListView()
     );
   }

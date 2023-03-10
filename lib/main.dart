@@ -1,3 +1,4 @@
+import 'package:dnd_helper/views/scale_monster_page.dart';
 import 'package:flutter/material.dart';
 import 'Views/monsters_list.dart';
 
@@ -14,13 +15,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: Colors.grey[800],
-        // Define the default font family.
-        // fontFamily: 'Arial',
-
-        // Define the default `TextTheme`. Use this to specify the default
-        // text styling for headlines, titles, bodies of text, and more.
       ),
-      home: const MonsterList(),
+      // home: const MonsterList(),
+      home: const ScaleMonsterPage()
     );
   }
 }
