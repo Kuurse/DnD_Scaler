@@ -24,15 +24,15 @@ class Monster:
         return Monster(self.name, self.armor_class, new_hitpoints, self.att_bonus, self.avg_dmg_per_round, new_att_per_round, self.save_dc, new_xp)
 
     def scale_to_party_level(self, party_level, designed_party_level):
-        modifier = party_level/designed_party_level
-        diff = party_level - designed_party_level
-        new_hitpoints = self.hitpoints + (diff*10)
+        # modifier = party_level/designed_party_level
+        # diff = party_level - designed_party_level
+        # new_hitpoints = self.hitpoints + (diff*10)
         new_avg_dmg_per_round = self.avg_dmg_per_round+(diff*2)
-        new_save_dc = 0
-        if self.save_dc != 0:
-            new_save_dc = self.save_dc+(math.ceil(diff/2))
-        new_armor_class = self.armor_class+(math.ceil(diff/2))
-        new_att_bonus = self.att_bonus+(round(diff/4))
+        # new_save_dc = 0
+        # if self.save_dc != 0:
+        #     new_save_dc = self.save_dc+(math.ceil(diff/2))
+        # new_armor_class = self.armor_class+(math.ceil(diff/2))
+        # new_att_bonus = self.att_bonus+(round(diff/4))
         new_xp = self.xp*modifier
         return Monster(self.name, new_armor_class, new_hitpoints, new_att_bonus, new_avg_dmg_per_round, self.att_per_round, new_save_dc, new_xp)
 

@@ -1,4 +1,14 @@
 import 'package:dnd_helper/tools/extensions.dart';
+import 'dart:math';
+
+import 'operator.dart';
+
+/**
+RegExp fullRegExp = RegExp(r'(\d+)d(\d+)(([+--](((\d+)d(\d+))|(\d+)))+)?');
+RegExp numericRegExp = RegExp(r'\d+');
+RegExp diceRegExp = RegExp(r'(\d+)d(\d+)');
+RegExp operatorRegExp = RegExp(r'[+\-]');
+ */
 
 class Response {
   int? count;
@@ -69,14 +79,14 @@ class Monster {
   List<Action>? actions;
   List<Action>? reactions;
   String? legendaryDesc;
-  List<DescribableAction>? legendaryActions;
-  List<DescribableAction>? specialAbilities;
+  List<Action>? legendaryActions;
+  List<Action>? specialAbilities;
   List<dynamic>? spellList;
   String? imgMain;
   String? documentSlug;
   String? documentTitle;
   String? documentLicenseUrl;
-  int? multiattack;
+  num? multiattack;
   int xp = 0;
 
   Monster(
@@ -137,19 +147,19 @@ class Monster {
     hitPoints = json['hit_points'];
     hitDice = DiceRoll.fromJson(json['hit_dice']);
     speed = json['speed'] != null ? Speed.fromJson(json['speed']) : null;
-    strength = json['strength'];
-    dexterity = json['dexterity'];
-    constitution = json['constitution'];
-    intelligence = json['intelligence'];
-    wisdom = json['wisdom'];
-    charisma = json['charisma'];
-    strengthSave = json['strength_save'];
-    dexteritySave = json['dexterity_save'];
-    constitutionSave = json['constitution_save'];
-    intelligenceSave = json['intelligence_save'];
-    wisdomSave = json['wisdom_save'];
-    charismaSave = json['charisma_save'];
-    perception = json['perception'];
+    strength = json['strength'] ?? 0;
+    dexterity = json['dexterity'] ?? 0;
+    constitution = json['constitution'] ?? 0;
+    intelligence = json['intelligence'] ?? 0;
+    wisdom = json['wisdom'] ?? 0;
+    charisma = json['charisma'] ?? 0;
+    strengthSave = json['strength_save'] ?? 0;
+    dexteritySave = json['dexterity_save'] ?? 0;
+    constitutionSave = json['constitution_save'] ?? 0;
+    intelligenceSave = json['intelligence_save'] ?? 0;
+    wisdomSave = json['wisdom_save'] ?? 0;
+    charismaSave = json['charisma_save'] ?? 0;
+    perception = json['perception'] ?? 0;
     skills = json['skills'];
     damageVulnerabilities = json['damage_vulnerabilities'];
     damageResistances = json['damage_resistances'];
@@ -166,7 +176,7 @@ class Monster {
       });
     }
 
-    if (json['reactions'] != "") {
+    if (json['reactions'] != "" && json['reactions'] != null) {
       reactions = <Action>[];
       json['reactions'].forEach((v) {
         reactions!.add(Action.fromJson(v));
@@ -174,17 +184,17 @@ class Monster {
     }
 
     legendaryDesc = json['legendary_desc'];
-    legendaryActions = <DescribableAction>[];
+    legendaryActions = <Action>[];
     if (json['legendary_actions'] != "") {
       json['legendary_actions'].forEach((v) {
-        legendaryActions!.add(DescribableAction.fromJson(v));
+        legendaryActions!.add(Action.fromJson(v));
       });
     }
 
-    specialAbilities = <DescribableAction>[];
+    specialAbilities = <Action>[];
     if (json['special_abilities'] != "") {
       json['special_abilities'].forEach((v) {
-        specialAbilities!.add(DescribableAction.fromJson(v));
+        specialAbilities!.add(Action.fromJson(v));
       });
     }
 
@@ -196,14 +206,12 @@ class Monster {
   }
 
   int getAttackPerTurnCount() {
-    String? multiatt = actions?.where((action) => action.name!.contains("Multiattack")).first.name?.toLowerCase();
+    Action? multiatt = actions?.where((action) => action.name!.contains("Multiattack")).first;
     int multi = 1;
 
     if (multiatt != null){
-      int att = 1;
-      var x = multiatt.split("makes ").last;
-      var textNum = x.split(" attacks").first;
-      multi = IntExtension.fromPlainEnglish(textNum);
+      var textNum = multiatt.desc!.valueBetween("makes", "attacks");
+      multi = IntExtension.fromPlainEnglish(textNum!);
     }
 
     multiattack = multi;
@@ -267,6 +275,15 @@ class Monster {
     data['document__license_url'] = documentLicenseUrl;
     return data;
   }
+
+  @override
+  String toString() {
+    var sb = StringBuffer();
+    toJson().forEach((key, value) {
+      sb.writeln('$key : ${value.toString()}');
+    });
+    return sb.toString();
+  }
 }
 
 class Speed {
@@ -297,24 +314,71 @@ class Speed {
   }
 }
 
-class Action extends DescribableAction {
+class Action {
+  String? name;
+  String? desc;
   int? attackBonus;
   DiceRoll? damageDice;
+  int? avgDamage;
   int? damageBonus;
 
   Action(
-      { String? name,
-        String? desc,
+      { this.name,
+        this.desc,
         this.attackBonus,
-        this.damageDice,
-        this.damageBonus}) : super(name, desc);
+        this.damageDice}){
+    // int? read = readAverageDamage();
+    // int? compute = computeAverageDamage();
+    // print("$read $compute");
+  }
 
-  Action.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+  int? readAverageDamage() {
+    var regex = RegExp(r'Hit: \d+');
+
+    int avg = 0;
+    if (regex.hasMatch(desc!)) {
+      var match = regex.firstMatch(desc!)?.group(0)?.replaceAll("Hit: ", "");
+      if (match != null) {
+        avg += int.parse(match);
+      }
+    }
+
+    regex = RegExp(r'plus \d+ \(');
+    if (regex.hasMatch(desc!)) {
+      var match = regex.firstMatch(desc!)?.group(0)?.replaceAll("plus ", "").replaceAll(" (", "");
+      if (match != null) {
+        avg += int.parse(match);
+      }
+    }
+
+    return avg == 0 ? null : avg;
+  }
+
+
+
+  int? computeAverageDamage() {
+    if (damageDice == null && damageBonus == null) return 0;
+    int avg = 0;
+    if (damageDice != null)
+    {
+      avg += damageDice!.getAverageRoll();
+    }
+    if (damageBonus != null) {
+      avg += damageBonus!;
+    }
+
+    return avg;
+  }
+
+  Action.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    desc = json['desc'].replaceAll(" + ", "+");
     attackBonus = json['attack_bonus'];
     damageBonus = json['damage_bonus'];
     if (json['damage_dice'] != null) {
       damageDice = DiceRoll.fromJson(json['damage_dice']);
     }
+    avgDamage = readAverageDamage();
   }
 
   @override
@@ -329,94 +393,78 @@ class Action extends DescribableAction {
   }
 }
 
-class DescribableAction {
-  String? name;
-  String? desc;
-
-  DescribableAction(this.name, this.desc);
-
-  DescribableAction.fromJson(Map<String, dynamic> json) {
-    name = json['name'];
-    desc = json['desc'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['name'] = name;
-    data['desc'] = desc;
-    return data;
-  }
-}
-
-class Value {
-  static RegExp fullRegExp = RegExp(r'(\d+)d(\d+)(([+--](((\d+)d(\d+))|(\d+)))+)?');
-  static RegExp numericRegExp = RegExp(r'\d+');
-  static RegExp diceRegExp = RegExp(r'(\d+)d(\d+)');
-  static RegExp operatorRegExp = RegExp(r'[+\-]');
-
-  static Value? fromString(String string) {
-    if (diceRegExp.hasMatch(string)) {
-      return DiceValue.fromString(string);
-    } else if (numericRegExp.hasMatch(string)) {
-      return RawValue(int.parse(string));
-    } else if (operatorRegExp.hasMatch(string)) {
-      return Operator(string);
-    } else {
-      return null;
-    }
-  }
-}
-
-class Operator extends Value {
-  String? operator;
-  Operator(this.operator);
-
-  @override
-  String toString() {
-    return operator!;
-  }
-}
-
-class RawValue extends Value {
-  int? value;
-  RawValue(this.value);
-
-  @override
-  String toString() {
-    return value!.toString();
-  }
-}
-
-class DiceValue extends Value {
+class DiceValue {
   int? amount;
-  int? die;
-  DiceValue(this.amount, this.die);
+  int? diceFaces;
+  DiceValue(this.amount, this.diceFaces);
 
   DiceValue.fromString(String string) {
     var split = string.split('d');
     amount = int.parse(split.first);
-    die = int.parse(split.last);
+    diceFaces = int.parse(split.last);
   }
 
   @override
   String toString() {
-    return "${amount}d$die";
+    return "${amount}d$diceFaces";
+  }
+
+  int getAverageRoll() {
+    return ((amount! + (amount!*diceFaces!))~/2);
   }
 }
 
 class DiceRoll {
-  List<Value>? values;
-  DiceRoll(this.values);
+  List<DiceValue>? values;
+  int? modifier;
+
+  DiceRoll({this.values, this.modifier});
 
   DiceRoll.fromJson(String json) {
-    var uncomputedValues = json.splitWithDelim(RegExp(r'[+--]'));
-    values = <Value>[];
-    for (var element in uncomputedValues) {
-      var value = Value.fromString(element);
-      if (value != null) {
-        values?.add(value);
+    if (json == null || json == "null") return;
+    var splits = json.splitAtIndexes(getOperatorIndexes(json));
+    values = <DiceValue>[];
+    for (var split in splits) {
+      if (!split.contains("d")) {
+        try {
+          modifier = int.parse(split);
+        } on FormatException {
+          print(split);
+        }
+      } else {
+        values!.add(DiceValue.fromString(split));
       }
     }
+    if (values!.isEmpty) values = null;
+  }
+
+  List<int> getOperatorIndexes(String str) {
+    var operatorIndexes = <int>[];
+    var indexCounter = 0;
+    for (var rune in str.runes) {
+      var character= String.fromCharCode(rune);
+      var operator = parseOperator(character);
+      if (operator != Operator.unknown){
+        operatorIndexes.add(indexCounter);
+      }
+      ++indexCounter;
+    }
+
+    return operatorIndexes;
+  }
+
+  int getAverageRoll(){
+    if (values == null) return 0;
+    int sum = 0;
+    for (int i=0; i<values!.length; i++) {
+      var value = values!.elementAt(i);
+      sum += value.getAverageRoll();
+    }
+    if (modifier != null) {
+      sum += modifier!;
+    }
+
+    return sum;
   }
 
   @override
@@ -424,7 +472,9 @@ class DiceRoll {
     var buffer = StringBuffer();
     values?.forEach((element) {
       buffer.write(element.toString());
+      buffer.write("+");
     });
+    buffer.write(modifier.toString());
     return buffer.toString();
   }
 }

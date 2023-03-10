@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/monster.dart';
 
-const double height = 85;
+const double height = 90;
 
 class StatBlock extends StatelessWidget {
-  Monster? monster;
-  StatBlock(this.monster, {super.key});
+  final Monster? monster;
+  const StatBlock(this.monster, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,6 @@ class StatBlock extends StatelessWidget {
       scrollDirection: Axis.vertical,
       shrinkWrap: true,
       primary: false,
-      padding: const EdgeInsets.all(20),
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
       crossAxisCount: 3,
@@ -25,26 +24,32 @@ class StatBlock extends StatelessWidget {
         StatDetail(
           name: "STR",
           value: monster?.strength,
+          save: monster?.strengthSave
         ),
         StatDetail(
           name: "DEX",
           value: monster?.dexterity,
+          save: monster?.dexteritySave,
         ),
         StatDetail(
           name: "CON",
           value: monster?.constitution,
+          save: monster?.constitutionSave,
         ),
         StatDetail(
           name: "INT",
           value: monster?.intelligence,
+          save: monster?.intelligenceSave,
         ),
         StatDetail(
           name: "WIS",
           value: monster?.wisdom,
+          save: monster?.wisdomSave,
         ),
         StatDetail(
           name: "CHA",
           value: monster?.charisma,
+          save: monster?.charismaSave,
         ),
       ],
     );
@@ -52,19 +57,20 @@ class StatBlock extends StatelessWidget {
 }
 
 class StatDetail extends StatelessWidget {
-  String? name;
-  int? value;
-  StatDetail({this.name, this.value, super.key});
+  final String? name;
+  final int? value;
+  final int? save;
+  const StatDetail({this.name, this.value, this.save, super.key});
 
   @override
   Widget build(BuildContext context) {
 
     return Container(
       height: height,
-      padding: const EdgeInsets.only(top:15, bottom: 15),
+      padding: const EdgeInsets.only(top:10, bottom: 10),
       decoration: const BoxDecoration(
         color: Colors.black,
-        borderRadius: BorderRadius.all(Radius.circular(20))
+        borderRadius: BorderRadius.all(Radius.circular(10))
       ),
       child: Center(
         child: Column(
@@ -72,12 +78,18 @@ class StatDetail extends StatelessWidget {
             Text(
               name ?? "?",
               style: const TextStyle(
-                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 decoration: TextDecoration.underline,
               )
             ),
+            const SizedBox(height: 4),
             Text("$value (${getValueBonus(value)})"),
+            Text(
+              "${save! >= 0 ? "+$save" : save}",
+              style: const TextStyle(
+                color: Colors.red,
+              ),
+            ),
           ],
         ),
       ),

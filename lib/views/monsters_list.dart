@@ -42,6 +42,7 @@ class _MonsterListState extends State<MonsterList> {
             icon: const Icon(Icons.search),
             onPressed: () {
               setState(() {
+                filteredMonsters = List.from(monsters!);
                 _searchBoolean = true;
               });
             })
@@ -68,7 +69,7 @@ class _MonsterListState extends State<MonsterList> {
       itemBuilder: (BuildContext context, int index) {
         return Card(
             child: ListTile(
-              onTap: () => onTap(context, index),
+              onTap: () => onTap(context, index, true),
                 title: Text(monsters![index].name ?? "")
             )
         );
@@ -77,10 +78,10 @@ class _MonsterListState extends State<MonsterList> {
     );
   }
 
-  void onTap(BuildContext context, int index) {
+  void onTap(BuildContext context, int index, bool defaultList) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context)=>
-        MonsterDetailPage(monster: monsters?[index])
+        MonsterDetailPage(monster: defaultList ? (monsters?[index]) : filteredMonsters?[index])
       )
     );
   }
@@ -91,6 +92,7 @@ class _MonsterListState extends State<MonsterList> {
       itemBuilder: (context, index) {
         return Card(
           child: ListTile(
+            onTap: () => onTap(context, index, false),
             title: Text(filteredMonsters![index].name ?? "")
           )
         );
