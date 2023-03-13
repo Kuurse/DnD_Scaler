@@ -62,7 +62,6 @@ class MonsterDetailPage extends StatelessWidget {
                 padding: const EdgeInsets.only(top:10),
                 child: StatBlock(monster),
               ),
-              const Text("Skills"),
               SkillsList(monster!.skills!),
               Row(
                 children: [
@@ -91,10 +90,6 @@ class MonsterDetailPage extends StatelessWidget {
       )
     );
   }
-
-  void onPressed() {
-    var mon2 = monster?.scaleToPartyLevel(10, 6);
-  }
 }
 
 class ActionList extends StatelessWidget {
@@ -106,7 +101,10 @@ class ActionList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(title),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         ListView.builder(
           itemCount: actions.length,
           primary: false,
@@ -193,19 +191,41 @@ class SkillsList extends StatelessWidget {
     final double itemWidth = size.width / columns;
     const double height = 20.0;
 
-    return GridView.count(
-      shrinkWrap: true,
-      primary: false,
-      crossAxisCount: columns,
-      childAspectRatio: (itemWidth / height),
-      children: List<Widget>.generate(
-          skills.length,
-              (index) => Row(
-              children: [
-                Text("${skills[index].name} : "),
-                Text("${skills[index].value}"),
-              ]
-          )
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0, bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: const BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.all(Radius.circular(10))
+        ),
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                "Skills",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            SizedBox(height:4),
+            GridView.count(
+              shrinkWrap: true,
+              primary: false,
+              crossAxisCount: columns,
+              childAspectRatio: (itemWidth / height),
+              children: List<Widget>.generate(
+                  skills.length,
+                      (index) => Row(
+                      children: [
+                        Text("${skills[index].name} : "),
+                        Text("${skills[index].value}"),
+                      ]
+                  )
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -318,7 +338,7 @@ class LevelScalingDialog extends StatelessWidget {
 
   Monster monster;
   LevelScalingDialog(this.monster, {super.key}){
-    designedLevelController.text = 4.toString();
+    designedLevelController.text = 6.toString();
     targetLevelController.text = 1.toString();
   }
   String? text;
@@ -330,7 +350,7 @@ class LevelScalingDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
         title: const Text('Title'),
-        content: Container(
+        content: SizedBox(
           width: MediaQuery.of(context).size.width,
           child: GridView.count(
             crossAxisCount: 2,
@@ -367,7 +387,7 @@ class LevelScalingDialog extends StatelessWidget {
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
             ),
-            child: const Text("Annular"),
+            child: const Text("Annuler"),
           ),
           ElevatedButton(
             onPressed: () {
@@ -406,7 +426,7 @@ class PartySizeScalingDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
         title: const Text('Title'),
-        content: Container(
+        content: SizedBox(
           width: MediaQuery.of(context).size.width,
           child: GridView.count(
             crossAxisCount: 2,
@@ -433,7 +453,7 @@ class PartySizeScalingDialog extends StatelessWidget {
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
             ),
-            child: const Text("Annular"),
+            child: const Text("Annuler"),
           ),
           ElevatedButton(
             onPressed: () {

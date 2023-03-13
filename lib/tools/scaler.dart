@@ -38,73 +38,67 @@ extension MonsterScaler on Monster {
     return newMonster;
   }
 
-  // static final List<int> _availableDice = <int>[4, 6, 8, 10, 12, 20];
   static final List<int> _availableDice = <int>[4, 6, 8, 10, 12];
   DiceRoll? calculateDamageDice(Action action, int diff) {
-    var avgDmg = action.readAverageDamage();
-    var avgDmg2 = action.computeAverageDamage();
-    var targetDmg = avgDmg! + (diff*2);
+    return scaleUp(action, diff);
+  }
 
-    // action has 1 attack roll
-    var values = action.damageDice!.values!;
-    var ogbonus = action.damageBonus ?? action.damageDice?.modifier ?? 0;
-    if (values.length == 1){
-      DiceRoll lastBigger = action.damageDice!;
-      for (int i=1;;i++) {
-        try {
-          // Bigger dice
-          var diceQuantity = values[0].amount!;
-          var diceIndex = _availableDice.indexOf(values[0].diceFaces!);
-          var diceSize = _availableDice[diceIndex + i];
-          var biggerDice = DiceRoll(
-              values: [
-                DiceValue(diceQuantity, diceSize)
-              ],
-              modifier: ogbonus
-          );
+  DiceRoll? scaleUp(Action action, int diff) {
+    if (action.diceRoll == null && action.damageBonus == null) return null;
+    final avgDmg = action.readAverageDamage();
+    final avgDmg2 = action.computeAverageDamage();
+    final targetDmg = avgDmg! + (diff * 2);
 
-          if (biggerDice.getAverageRoll()> targetDmg) {
-            break;
-          }
-          lastBigger = biggerDice;
-        } on RangeError {
-          break;
+    var tmpDice = DiceRoll.fromJson(action.diceRoll.toString());
+    final plus = diff >= 0;
+
+    while (plus ? tmpDice.getAverageRoll() < targetDmg : tmpDice.getAverageRoll() > targetDmg) {
+      final dmgDiff = targetDmg - tmpDice.getAverageRoll();
+
+      if (tmpDice.getAverageRoll() == targetDmg) return tmpDice;
+      // The goal here is to change values with this priority:
+      // - the number of dice
+      // - the size of the dice
+      // - the modifier
+      // And repeat the checks until the average is equal or over the target;
+      // check if changing dice amount is ok
+      // going from XdY+Z to ((tmpDice.dice![0].diceFaces!+1)/2)(X+n)dY+Z increases average by (Y+1)/2
+      final x1 = ((tmpDice.dice![0].diceFaces!+1)/2);
+      if (plus ? dmgDiff >= x1 : (dmgDiff <= x1 && tmpDice.dice![0].amount! > 1)) {
+        // More dice
+        tmpDice.dice = plus ?
+          <DiceValue>[ DiceValue(tmpDice.dice![0].amount! + 1, tmpDice.dice![0].diceFaces) ] :
+          <DiceValue>[ DiceValue(tmpDice.dice![0].amount! - 1, tmpDice.dice![0].diceFaces) ];
+        continue;
+      }
+
+      if (tmpDice.getAverageRoll() == targetDmg) return tmpDice;
+      // check if increasing dice size is ok
+      // going from XdY+Z to Xd(Y+n)+Z increases average by n
+      // find the index of the current dice
+      //     check if the next dice would nuke the average
+      //         check if there is a next dice. If not, we can go to next step
+      var index = _availableDice.indexOf(tmpDice.dice![0].diceFaces!);
+      if (plus ? index < _availableDice.length - 1 : index > 0) {
+        final nextDiceFaceCount = plus ? _availableDice[index + 1] : _availableDice[index-1];
+        final diceFaces = tmpDice.dice![0].diceFaces!;
+        // If the damage difference is bigger/smaller than the dice faces difference, it's
+        // ok to increase/decrease dice
+        final x2 = tmpDice.dice![0].amount!*((nextDiceFaceCount - diceFaces)/2);
+        if (plus ? dmgDiff >= x2 : dmgDiff <= x2) {
+          // Increase/decrease dice
+          tmpDice.dice = <DiceValue>[ DiceValue(tmpDice.dice![0].amount, nextDiceFaceCount) ];
+          continue;
         }
       }
 
-      DiceRoll lastMore = action.damageDice!;
-      // More of the same dice
-      for (int i=0;;i++) {
-        var diceQuantity = values[0].amount! + i;
-        var moreDice = DiceRoll(
-            values: [
-              DiceValue(diceQuantity, values[0].diceFaces!)
-            ],
-            modifier: ogbonus
-        );
-
-        if (moreDice.getAverageRoll()> targetDmg) {
-          break;
-        }
-        lastMore = moreDice;
-      }
-
-      DiceRoll dr;
-      int bigger = (targetDmg - lastBigger.getAverageRoll()).abs();
-      int more= (targetDmg - lastMore.getAverageRoll()).abs();
-      if (bigger < more) {
-        // bigger dice was closer to end res
-        dr = lastBigger;
-        dr.modifier = (lastBigger.modifier ?? 0) + bigger;
-      } else {
-        // more dice was closer
-        dr = lastMore;
-        dr.modifier = (lastMore.modifier ?? 0) + more;
-      }
-      return dr;
-
+      if (tmpDice.getAverageRoll() == targetDmg) return tmpDice;
+      // if all else is done or has failed, increase the modifier
+      tmpDice.modifier =  (tmpDice.modifier ?? action.damageBonus ?? 0) + (targetDmg - tmpDice.getAverageRoll());
     }
-    return null;
+
+    print("returning ${tmpDice}");
+    return tmpDice;
   }
 
   List<Action> _scaleActions(List<Action>? act, int diff) {
@@ -114,14 +108,18 @@ extension MonsterScaler on Monster {
     }
 
     for (var action in act){
-      if (action.damageBonus == null && action.damageDice == null) continue;
+      if (action.damageBonus == null && action.diceRoll == null) continue;
       var newAction = Action(name: action.name);
       newAction.attackBonus = action.attackBonus! + (diff/4).round();
 
       var dmgDice = calculateDamageDice(action, diff);
-      newAction.damageDice = dmgDice;
+      newAction.diceRoll = dmgDice;
 
-      newAction.desc = action.desc;
+      //update description with the values just computed
+      var desc = action.desc!.replaceAll(action.diceRoll.toString(), dmgDice.toString())
+        .replaceAll("Hit: ${action.computeAverageDamage()}", newAction.diceRoll!.getAverageRoll().toString());
+
+      newAction.desc = desc;
       a.add(newAction);
     }
 

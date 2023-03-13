@@ -1,5 +1,6 @@
 
 
+import 'package:dnd_helper/views/drawer.dart';
 import 'package:flutter/material.dart';
 
 class ScaleMonsterPage extends StatefulWidget {
@@ -24,6 +25,7 @@ class _ScaleMonsterPageState extends State<ScaleMonsterPage> {
       appBar: AppBar(
         title: Text("SCALE IT BABY"),
       ),
+      drawer: MyDrawer(),
       body: Column(
         children: [
           Row(

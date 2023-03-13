@@ -1,5 +1,8 @@
 
+import 'package:dnd_helper/views/scale_monster_page.dart';
 import 'package:flutter/material.dart';
+
+import '../Views/monsters_list.dart';
 
 class MyDrawer extends StatelessWidget {
   const MyDrawer({Key? key}) : super(key: key);
@@ -11,26 +14,32 @@ class MyDrawer extends StatelessWidget {
         // Important: Remove any padding from the ListView.
         padding: EdgeInsets.zero,
         children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.blue,
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: Colors.black45,
             ),
-            child: Text('Coucou petite perruche'),
+            child: Text(
+              'Coucou petite perruche',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
           ListTile(
             title: const Text('Basique'),
             onTap: () {
-              // Update the state of the app.
-              // ...
-              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ScaleMonsterPage()),
+              );
+
             },
           ),
           ListTile(
             title: const Text('Liste'),
             onTap: () {
-              // Update the state of the app.
-              // ...
-              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MonsterList()),
+              );
             },
           ),
         ],

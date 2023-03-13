@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:dnd_helper/tools/extensions.dart';
 import 'dart:math';
 
@@ -355,7 +357,7 @@ class Action {
   String? name;
   String? desc;
   int? attackBonus;
-  DiceRoll? damageDice;
+  DiceRoll? diceRoll;
   int? avgDamage;
   int? damageBonus;
 
@@ -363,7 +365,7 @@ class Action {
       { this.name,
         this.desc,
         this.attackBonus,
-        this.damageDice});
+        this.diceRoll});
 
   int? readAverageDamage() {
     var regex = RegExp(r'Hit: \d+');
@@ -390,11 +392,11 @@ class Action {
 
 
   int? computeAverageDamage() {
-    if (damageDice == null && damageBonus == null) return 0;
+    if (diceRoll == null && damageBonus == null) return 0;
     int avg = 0;
-    if (damageDice != null)
+    if (diceRoll != null)
     {
-      avg += damageDice!.getAverageRoll();
+      avg += diceRoll!.getAverageRoll();
     }
     if (damageBonus != null) {
       avg += damageBonus!;
@@ -409,7 +411,7 @@ class Action {
     attackBonus = json['attack_bonus'];
     damageBonus = json['damage_bonus'];
     if (json['damage_dice'] != null) {
-      damageDice = DiceRoll.fromJson(json['damage_dice']);
+      diceRoll = DiceRoll.fromJson(json['damage_dice']);
     }
     avgDamage = readAverageDamage();
   }
@@ -420,7 +422,7 @@ class Action {
     data['name'] = name;
     data['desc'] = desc;
     data['attack_bonus'] = attackBonus;
-    data['damage_dice'] = damageDice.toString();
+    data['damage_dice'] = diceRoll.toString();
     data['damage_bonus'] = damageBonus;
     return data;
   }
@@ -448,15 +450,15 @@ class DiceValue {
 }
 
 class DiceRoll {
-  List<DiceValue>? values;
+  List<DiceValue>? dice;
   int? modifier;
 
-  DiceRoll({this.values, this.modifier});
+  DiceRoll({this.dice, this.modifier});
 
   DiceRoll.fromJson(String json) {
     if (json == null || json == "null") return;
     var splits = json.splitAtIndexes(getOperatorIndexes(json));
-    values = <DiceValue>[];
+    dice = <DiceValue>[];
     for (var split in splits) {
       if (!split.contains("d")) {
         try {
@@ -465,10 +467,10 @@ class DiceRoll {
           print(split);
         }
       } else {
-        values!.add(DiceValue.fromString(split));
+        dice!.add(DiceValue.fromString(split));
       }
     }
-    if (values!.isEmpty) values = null;
+    if (dice!.isEmpty) dice = null;
   }
 
   List<int> getOperatorIndexes(String str) {
@@ -487,10 +489,10 @@ class DiceRoll {
   }
 
   int getAverageRoll(){
-    if (values == null) return 0;
+    if (dice == null) return 0;
     int sum = 0;
-    for (int i=0; i<values!.length; i++) {
-      var value = values!.elementAt(i);
+    for (int i=0; i<dice!.length; i++) {
+      var value = dice!.elementAt(i);
       sum += value.getAverageRoll();
     }
     if (modifier != null) {
@@ -503,11 +505,18 @@ class DiceRoll {
   @override
   String toString() {
     var buffer = StringBuffer();
-    values?.forEach((element) {
-      buffer.write(element.toString());
-      buffer.write("+");
-    });
-    buffer.write(modifier.toString());
+    if (dice != null){
+      for (int i=0; i<dice!.length; i++) {
+        final die = dice![i];
+        buffer.write(die.toString());
+        if (dice!.length > 1 && i==0) {
+          buffer.write("+");
+        }
+      }
+    }
+    if (modifier != null) {
+      buffer.write("+${modifier.toString()}");
+    }
     return buffer.toString();
   }
 }

@@ -16,8 +16,8 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
         primaryColor: Colors.grey[800],
       ),
-      // home: const MonsterList(),
-      home: const ScaleMonsterPage()
+      home: const MonsterList(),
+      // home: const ScaleMonsterPage()
     );
   }
 }
