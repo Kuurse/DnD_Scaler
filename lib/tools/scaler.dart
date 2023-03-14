@@ -44,10 +44,16 @@ extension MonsterScaler on Monster {
   }
 
   DiceRoll? scaleUp(Action action, int diff) {
-    if (action.diceRoll == null && action.damageBonus == null) return null;
-    final avgDmg = action.readAverageDamage();
-    final avgDmg2 = action.computeAverageDamage();
-    final targetDmg = avgDmg! + (diff * 2);
+    if (action.diceRoll == null) return null;
+    // final avgDmg = action.readAverageDamage();
+    final avgDmg = action.computeAverageDamage();
+    var targetDmg = avgDmg! + (diff * 2);
+    if (targetDmg < 0) {
+      targetDmg = 1;
+    }
+
+    print("Scaling ${action.name}");
+    print("OG average $avgDmg, target avg $targetDmg");
 
     var tmpDice = DiceRoll.fromJson(action.diceRoll.toString());
     final plus = diff >= 0;
@@ -55,12 +61,15 @@ extension MonsterScaler on Monster {
     while (plus ? tmpDice.getAverageRoll() < targetDmg : tmpDice.getAverageRoll() > targetDmg) {
       final dmgDiff = targetDmg - tmpDice.getAverageRoll();
 
-      if (tmpDice.getAverageRoll() == targetDmg) return tmpDice;
+      if (tmpDice.getAverageRoll() == targetDmg) {
+        break;
+      }
       // The goal here is to change values with this priority:
       // - the number of dice
       // - the size of the dice
       // - the modifier
       // And repeat the checks until the average is equal or over the target;
+
       // check if changing dice amount is ok
       // going from XdY+Z to ((tmpDice.dice![0].diceFaces!+1)/2)(X+n)dY+Z increases average by (Y+1)/2
       final x1 = ((tmpDice.dice![0].diceFaces!+1)/2);
@@ -72,7 +81,9 @@ extension MonsterScaler on Monster {
         continue;
       }
 
-      if (tmpDice.getAverageRoll() == targetDmg) return tmpDice;
+      if (tmpDice.getAverageRoll() == targetDmg) {
+        break;
+      }
       // check if increasing dice size is ok
       // going from XdY+Z to Xd(Y+n)+Z increases average by n
       // find the index of the current dice
@@ -92,12 +103,19 @@ extension MonsterScaler on Monster {
         }
       }
 
-      if (tmpDice.getAverageRoll() == targetDmg) return tmpDice;
+      if (tmpDice.getAverageRoll() == targetDmg) {
+        break;
+      }
       // if all else is done or has failed, increase the modifier
-      tmpDice.modifier =  (tmpDice.modifier ?? action.damageBonus ?? 0) + (targetDmg - tmpDice.getAverageRoll());
+      var mod =  (tmpDice.modifier ?? 0) + (targetDmg - tmpDice.getAverageRoll());
+      if (mod < 0) {
+        mod = 0;
+        break;
+      }
+      tmpDice.modifier = mod;
     }
 
-    print("returning ${tmpDice}");
+    print("returning $tmpDice for ${action.name} ");
     return tmpDice;
   }
 
@@ -108,7 +126,7 @@ extension MonsterScaler on Monster {
     }
 
     for (var action in act){
-      if (action.damageBonus == null && action.diceRoll == null) continue;
+      if (action.diceRoll == null) continue;
       var newAction = Action(name: action.name);
       newAction.attackBonus = action.attackBonus! + (diff/4).round();
 
@@ -116,8 +134,10 @@ extension MonsterScaler on Monster {
       newAction.diceRoll = dmgDice;
 
       //update description with the values just computed
+      var oldAvg = action.computeAverageDamage();
+      var newAvg = newAction.diceRoll!.getAverageRoll().toString();
       var desc = action.desc!.replaceAll(action.diceRoll.toString(), dmgDice.toString())
-        .replaceAll("Hit: ${action.computeAverageDamage()}", newAction.diceRoll!.getAverageRoll().toString());
+        .replaceAll("$oldAvg ", "$newAvg ");
 
       newAction.desc = desc;
       a.add(newAction);

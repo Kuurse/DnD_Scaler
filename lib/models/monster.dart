@@ -359,7 +359,6 @@ class Action {
   int? attackBonus;
   DiceRoll? diceRoll;
   int? avgDamage;
-  int? damageBonus;
 
   Action(
       { this.name,
@@ -392,14 +391,10 @@ class Action {
 
 
   int? computeAverageDamage() {
-    if (diceRoll == null && damageBonus == null) return 0;
+    if (diceRoll == null) return 0;
     int avg = 0;
-    if (diceRoll != null)
-    {
+    if (diceRoll != null) {
       avg += diceRoll!.getAverageRoll();
-    }
-    if (damageBonus != null) {
-      avg += damageBonus!;
     }
 
     return avg;
@@ -409,10 +404,14 @@ class Action {
     name = json['name'];
     desc = json['desc'].replaceAll(" + ", "+");
     attackBonus = json['attack_bonus'];
-    damageBonus = json['damage_bonus'];
     if (json['damage_dice'] != null) {
       diceRoll = DiceRoll.fromJson(json['damage_dice']);
     }
+
+    if (json['damage_bonus'] != null) {
+      diceRoll?.setModifier(json['damage_bonus']);
+    }
+
     avgDamage = readAverageDamage();
   }
 
@@ -423,7 +422,6 @@ class Action {
     data['desc'] = desc;
     data['attack_bonus'] = attackBonus;
     data['damage_dice'] = diceRoll.toString();
-    data['damage_bonus'] = damageBonus;
     return data;
   }
 }
@@ -515,8 +513,24 @@ class DiceRoll {
       }
     }
     if (modifier != null) {
-      buffer.write("+${modifier.toString()}");
+      if (modifier! >= 0){
+        buffer.write("+");
+      }
+      if (modifier! != 0) {
+        buffer.write(modifier.toString());
+      }
     }
     return buffer.toString();
+  }
+
+  void setModifier(int damageBonus) {
+    if (modifier == null) {
+      modifier = damageBonus;
+      return;
+    } else {
+      if (modifier != damageBonus) {
+        print("We have a problem. Action damage_bonus and dice modifier are different: bonus:$damageBonus modifier$modifier");
+      }
+    }
   }
 }
